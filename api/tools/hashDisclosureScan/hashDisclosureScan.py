@@ -56,24 +56,16 @@ class HashDisclosureScanRule:
                 matches = re.findall(hash_pattern, haystack)
                 for match in matches:
                     evidence = match
-                    print(evidence)
+                    return {
+                        'url': url,
+                        'method': "GET",
+                        "parameter": "",
+                        "attack": "",
+                        "evidence": self.evidence[0]
+                    }
                     # print(f"Found a match for hash type {hash_type} : {evidence}")
 
 
-import requests
-
-# make a GET request
-response = requests.get('http://nsi.isaix.com')
-
-# create the message dictionary
-msg = {
-    'request_header': str(response.request.headers),
-    'request_body': response.request.body,
-    'response_header': str(response.headers),
-    'response_body': response.text,
-}
-
-scanner = HashDisclosureScanRule()
-# call the scanning functions
-scanner.scan_http_request_send(msg)
-scanner.scan_http_response_receive(msg)
+def scanForHash(html, url):
+    scanner = HashDisclosureScanRule()
+    scanner.scan(html, url)

@@ -27,7 +27,7 @@ class CacheControlScanRule:
                 'method': "GET",
                 "parameter": "",
                 "attack": "",
-                "evidence": self.evidence[0]
+                "evidence": self.evidence[0] if self.evidence[0] else ""
             }
         else: return None
 

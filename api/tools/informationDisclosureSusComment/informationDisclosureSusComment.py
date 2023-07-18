@@ -42,8 +42,7 @@ class InformationDisclosureSuspiciousCommentsScanRule:
                     for pattern in self.patterns:
                         match = pattern.search(comment)
                         if match:
-                            self.evidence.append(
-                                {'detail': comment, 'confidence': 'MEDIUM', 'evidence': match.group()})
+                            self.evidence.append(match.group())
                             break  # Only need to record this comment once
 
                 # Check the scripts
@@ -52,8 +51,7 @@ class InformationDisclosureSuspiciousCommentsScanRule:
                     for pattern in self.patterns:
                         match = pattern.search(str(script))
                         if match:
-                            self.evidence.append(
-                                {'detail': str(script), 'confidence': 'LOW', 'evidence': match.group()})
+                            self.evidence.append(match.group())
                             break  # Only need to record this script once
 
 
@@ -83,4 +81,4 @@ def hasSusComment(url):
     scanner = InformationDisclosureSuspiciousCommentsScanRule()
     return scanner.scan_http_response_receive(url)
 
-# print(hasSusComment('https://darkwebscanner.mackstathis.dev/_app/immutable/chunks/singletons.cf8a9a65.js'))
+# print(hasSusComment('http://nsi.isaix.com'))

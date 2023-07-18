@@ -405,7 +405,7 @@ class Scanner:
                 output = {
                     'alerts': dict(scanner.vulnerabilities)
                 }
-                return jsonify(output), 200  # convert DictProxy to dict and jsonify it
+                return jsonify(output), 200 
             else:
                 return jsonify({'error': 'Invalid request'}), 400
         except Exception as e:
