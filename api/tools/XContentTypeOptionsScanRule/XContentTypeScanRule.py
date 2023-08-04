@@ -51,13 +51,13 @@ class XContentTypeOptionsScanRule:
                     #     'summary': "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to ’nosniff’. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.",
                     #     'solution': "Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages. If possible, ensure that the end user uses a standards-compliant and modern web browser that does not perform MIME-sniffing at all, or that can be directed by the web application/web server to not perform MIME-sniffing."
                     # }
-                    return {
-                        'url': url,
-                        'method': "GET",
-                        "parameter": "",
-                        "attack": "",
-                        "evidence": self.evidence[0]
-                    }
+                        return {
+                            'url': url,
+                            'method': "GET",
+                            "parameter": "",
+                            "attack": "",
+                            "evidence": self.evidence[0]
+                        }
 
 def scan(url):
     # Create an instance of the XContentTypeOptionsScanRule class

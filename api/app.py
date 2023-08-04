@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
+import traceback
 from urllib.parse import urlparse, parse_qs
 
 from tools.anticlickjacking.anticlickjacking import isVulner as antiClickJacking
@@ -41,6 +42,9 @@ from tools.XPoweredByHeaderInfoLeakScanRule.XPoweredByHeaderInfoLeakScanRule imp
 from tools.informationDisclosureSusComment.informationDisclosureSusComment import hasSusComment
 from tools.cacheControlScan.cacheControlScan import badCacheControl
 from tools.directoryListing.directoryListing import listDirectory
+from tools.cookieHttpOnlyScanRule.cookieHttpOnlyScanRule import scan as httpOnlyScan
+from tools.cookieLooselyScopedScanRule.cookieLooselyScopedScanRule import scan as looselyScopedScan
+from tools.cookieSecureFlagScanRule.cookieSecureFlagScanRule import scan as secureFlagScan
 import requests 
 import multiprocessing
 
@@ -362,6 +366,27 @@ class Scanner:
 
                 self.add_urls('Cache Control', cacheControlDirective)
 
+            notHttpCookie = httpOnlyScan(cookies, url)
+            if notHttpCookie:
+                if 'HttpOnly' not in self.vulnerabilities:
+                    self.vulnerabilities['HttpOnly'] = self.create_vuln_entry('Cookie No HttpOnly Flag', 'A cookie has been set without the HttpOnly flag, which means that the cookie can be accessed by JavaScript. If a malicious script can be run on this page then the cookie will be accessible and can be transmitted to another site. If this is a session cookie then session hijacking may be possible.', 13, "CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag", "https://owasp.org/www-community/HttpOnly", 'Ensure that the HttpOnly flag is set for all cookies.', 'Low')
+
+                self.add_urls('HttpOnly', notHttpCookie)
+
+            looselyScopedCookie = looselyScopedScan(cookies, url)
+            if looselyScopedCookie:
+                if 'LooselyScopedCookie' not in self.vulnerabilities:
+                    self.vulnerabilities['LooselyScopedCookie'] = self.create_vuln_entry('Loosely Scoped Cookie', "Cookies can be scoped by domain or path. This check is only concerned with domain scope.The domain scope applied to a cookie determines which domains can access it. For example, a cookie can be scoped strictly to a subdomain e.g. www.nottrusted.com, or loosely scoped to a parent domain e.g. nottrusted.com. In the latter case, any subdomain of nottrusted.com can access the cookie. Loosely scoped cookies are common in mega-applications like google.com and live.com. Cookies set from a subdomain like app.foo.bar are transmitted only to that domain by the browser. However, cookies scoped to a parent-level domain may be transmitted to the parent, or any subdomain of the parent.", 15, 'CWE-565: Reliance on Cookies without Validation and Integrity Checking', "https://tools.ietf.org/html/rfc6265#section-4.1", "Always scope cookies to a FQDN (Fully Qualified Domain Name).", "Informational")
+
+                self.add_urls("LooselyScopedCookie", looselyScopedCookie)
+
+            secureFlagCookie = secureFlagScan(cookies, url)
+            if secureFlagCookie:
+                if 'SecureFlagCookie' not in self.vulnerabilities:
+                    self.vulnerabilities['SecureFlagCookie'] = self.create_vuln_entry("Cookie Without Secure Flag", "A cookie has been set without the secure flag, which means that the cookie can be accessed via unencrypted connections.", 13, "CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute", "https://owasp.org/www-project-web-security-testing-guide/v41/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes.html", "Whenever a cookie contains sensitive information or is a session token, then it should always be passed using an encrypted channel. Ensure that the secure flag is set for cookies containing such sensitive information.", "Low")
+
+                self.add_urls("SecureFlagCookie", secureFlagCookie)
+
 
             driver.quit()
             # self.vulnerabilities[url] = retval
@@ -400,7 +425,7 @@ class Scanner:
                         scanner.execute_scans(url)
                 
                     except Exception as e:
-                        print(e.with_traceback())
+                        traceback.print_exc()
 
                 output = {
                     'alerts': dict(scanner.vulnerabilities)
@@ -409,7 +434,7 @@ class Scanner:
             else:
                 return jsonify({'error': 'Invalid request'}), 400
         except Exception as e:
-            print(e.with_traceback())
+            traceback.print_exc()
             return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

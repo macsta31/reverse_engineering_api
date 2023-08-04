@@ -68,4 +68,5 @@ class HashDisclosureScanRule:
 
 def scanForHash(html, url):
     scanner = HashDisclosureScanRule()
-    scanner.scan(html, url)
+    scanner.scan_http_request_send(html, url)
+    scanner.scan_http_response_receive(html, url)
