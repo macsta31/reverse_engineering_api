@@ -45,6 +45,8 @@ from tools.directoryListing.directoryListing import listDirectory
 from tools.cookieHttpOnlyScanRule.cookieHttpOnlyScanRule import scan as httpOnlyScan
 from tools.cookieLooselyScopedScanRule.cookieLooselyScopedScanRule import scan as looselyScopedScan
 from tools.cookieSecureFlagScanRule.cookieSecureFlagScanRule import scan as secureFlagScan
+from tools.charsetMismatchScanRule.charsetMismatchScanRule import scan as charsetMismatchScan
+from tools.hashDisclosureScan.hashDisclosureScan import scan as hashDisclosureScan
 import requests 
 import multiprocessing
 
@@ -387,11 +389,23 @@ class Scanner:
 
                 self.add_urls("SecureFlagCookie", secureFlagCookie)
 
+            charsetMismatch = charsetMismatchScan(url, html)
+            if charsetMismatch:
+                if 'charsetMismatch' not in self.vulnerabilities:
+                    self.vulnerabilities['charSetMismatch'] = self.create_vuln_entry('Charset Mismatch', "This check identifies responses where the HTTP Content-Type header declares a charset different from the charset defined by the body of the HTML or XML. When there’s a charset mismatch between the HTTP header and content body Web browsers can be forced into an undesirable content-sniffing mode to determine the content’s correct character set. An attacker could manipulate content on the page to be interpreted in an encoding of their choice. For example, if an attacker can control content at the beginning of the page, they could inject script using UTF-7 encoded text and manipulate some browsers into interpreting that text.", 15, "CWE-436: Interpretation Conflict", "http://code.google.com/p/browsersec/wiki/Part2#Character_set_handling_and_detection", "Force UTF-8 for all text content in both the HTTP header and meta tags in HTML or encoding declarations in XML.", 'Informational')
+                self.add_urls('charsetMismatch', charsetMismatch)
+
+            hashDisclosure = hashDisclosureScan(url, html)
+            if hashDisclosure:
+                if 'hashDisclosure' not in self.vulnerabilities:
+                    self.vulnerabilities['hashDisclosure'] = self.create_vuln_entry("Hash Disclosure", "A hash was disclosed by the web server.", 13, "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor", " http://projects.webappsec.org/w/page/13246936/Information%20Leakage", "Ensure that hashes that are used to protect credentials or other resources are not leaked by the web server or database. There is typically no requirement for password hashes to be accessible to the web browser.", "Informational")
+
+                self.add_urls('hashDisclosure', hashDisclosure)
 
             driver.quit()
             # self.vulnerabilities[url] = retval
         except Exception as e:
-            print('error while scanning url {}: {}'.format(url, e.with_traceback()))
+            print('error while scanning url {}: {}'.format(url, traceback.print_exc()))
 
     # def reformat_data(retval):
         
@@ -410,7 +424,7 @@ class Scanner:
 
                 directoryList = [input_data]
                 # Default depth is 1 and default max_retries is 3
-                newFiles = listDirectory(input_data)
+                newFiles = listDirectory(input_data, time_limit=10000)
                 for file in newFiles:
                     directoryList.append(file)
 
