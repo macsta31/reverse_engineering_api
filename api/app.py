@@ -47,6 +47,9 @@ from tools.cookieLooselyScopedScanRule.cookieLooselyScopedScanRule import scan a
 from tools.cookieSecureFlagScanRule.cookieSecureFlagScanRule import scan as secureFlagScan
 from tools.charsetMismatchScanRule.charsetMismatchScanRule import scan as charsetMismatchScan
 from tools.hashDisclosureScan.hashDisclosureScan import scan as hashDisclosureScan
+from tools.informationDisclosureReferrer.informationDisclosureReferrer import scan as referrerScan
+from tools.insecureAuthenticationScan.insecureAuthenticationScan import scan as insecureAuthScan
+from tools.insecureJsfViewState.insecureJsfPassiveViewState import scan as insecureJsfScan
 import requests 
 import multiprocessing
 
@@ -398,9 +401,27 @@ class Scanner:
             hashDisclosure = hashDisclosureScan(url, html)
             if hashDisclosure:
                 if 'hashDisclosure' not in self.vulnerabilities:
-                    self.vulnerabilities['hashDisclosure'] = self.create_vuln_entry("Hash Disclosure", "A hash was disclosed by the web server.", 13, "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor", " http://projects.webappsec.org/w/page/13246936/Information%20Leakage", "Ensure that hashes that are used to protect credentials or other resources are not leaked by the web server or database. There is typically no requirement for password hashes to be accessible to the web browser.", "Informational")
+                    self.vulnerabilities['hashDisclosure'] = self.create_vuln_entry("Hash Disclosure", "A hash was disclosed by the web server.", 13, "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor", "http://projects.webappsec.org/w/page/13246936/Information%20Leakage", "Ensure that hashes that are used to protect credentials or other resources are not leaked by the web server or database. There is typically no requirement for password hashes to be accessible to the web browser.", "Informational")
 
                 self.add_urls('hashDisclosure', hashDisclosure)
+
+            referrerInfo = referrerScan(url)
+            if referrerInfo:
+                if 'Information Disclosure Referrer' not in self.vulnerabilities:
+                    self.vulnerabilities['Information Disclosure Referrer'] = self.create_vuln_entry('Information Disclosure - Sensitive Information in HTTP Referrer Header', "The HTTP header may have leaked a potentially sensitive parameter to another domain. This can violate PCI and most organizational compliance policies. You can configure the list of strings for this check to add or remove values specific to your environment.", 13, "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor", "", "Do not pass sensitive information in URIs.", "Informational")
+                self.add_urls('Information Disclosure Referrer', referrerInfo)
+
+            insecureAuth = insecureAuthScan(url)
+            if insecureAuth:
+                if 'Insecure Authentication' not in self.vulnerabilities:
+                    self.vulnerabilities['Insecure Authentication'] = self.create_vuln_entry("Weak Authentication Method", "HTTP basic or digest authentication has been used over an unsecured connection. The credentials can be read and then reused by someone with access to the network.", 4, "CWE-326: Inadequate Encryption Strength", "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html", "Protect the connection using HTTPS or use a stronger authentication mechanism", "")
+                self.add_urls('Insecure Authentication', insecureAuth)
+
+            insecureJsfViewState = insecureJsfScan(url)
+            if insecureJsfViewState:
+                if 'Insecure JSF ViewState' not in self.vulnerabilities:
+                    self.vulnerabilities['Insecure JSF ViewState'] = self.create_vuln_entry('Insecure JSF ViewState', 'The response at the following URL contains a ViewState value that has no cryptographic protections.', 14, 'CWE-642: External Control of Critical State Data', 'https://www.trustwave.com/spiderlabs/advisories/TWSL2010-001.txt', 'Secure VIEWSTATE with a MAC specific to your environment', 'Medium')
+                self.add_urls('Insecure JSF ViewState', insecureJsfViewState)
 
             driver.quit()
             # self.vulnerabilities[url] = retval
